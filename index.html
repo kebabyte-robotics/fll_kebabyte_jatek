@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLL Régészeti Szállítás - Globális</title>
+    <style>
+        :root {
+            --primary: #FF9800;
+            --bg: #2E2E2E;
+            --text: #FFFFFF;
+            --city-bg: #4CAF50;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { color: var(--primary); text-align: center; margin-bottom: 5px; margin-top: 0;}
+        .subtitle { text-align: center; color: #ccc; margin-bottom: 20px; font-style: italic; }
+        
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: #3e3e3e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+        
+        #menu { text-align: center; padding: 40px 0; }
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .btn:hover { background-color: #e68a00; transform: translateY(-2px); }
+        
+        #game { display: none; }
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .timer { font-size: 24px; font-weight: bold; color: #f44336; }
+        
+        #map-container {
+            position: relative;
+            width: 100%;
+            height: 600px; 
+            background-color: #a4cddb; 
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg');
+            background-size: 100% 100%; 
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 3px solid #555;
+        }
+        svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        .city {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: var(--city-bg);
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 20px; height: 20px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            transition: 0.2s;
+        }
+        .city:hover { transform: translate(-50%, -50%) scale(1.4); z-index: 10;}
+        .city.disabled { cursor: not-allowed; opacity: 0.4; filter: grayscale(100%); }
+        .city.active { border-color: yellow; box-shadow: 0 0 15px yellow; z-index: 5;}
+        .city.start { background: #f44336; z-index: 5;}
+        .city.dest { background: #2196F3; z-index: 5;}
+        
+        .city-name {
+            position: absolute;
+            bottom: 110%;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 10px; 
+            pointer-events: none;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .city-temp { font-size: 9px; font-weight: bold; color: white; pointer-events: none;}
+        
+        #result { display: none; text-align: center; padding: 40px 0; }
+        #result h2 { font-size: 36px; }
+        
+        .controls { margin-top: 15px; text-align: center; }
+        .route-log { font-size: 14px; color: #ccc; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>FLL Régészeti Szállítás</h1>
+    <div class="subtitle">Óvd meg a leleteket a globális szállítás során!</div>
+
+    <div id="menu">
+        <h2>Válassz nehézségi fokot!</h2>
+        <p style="max-width: 600px; margin: 0 auto 30px auto; line-height: 1.6;">
+            A feladatod: Eljuttatni a felbecsülhetetlen értékű régészeti leletet a célállomásra! <br>
+            A lelet nagyon érzékeny a hőmérséklet-változásra. Tervezd meg úgy az útvonalat a világtérképen, 
+            hogy az érintett városok hőmérséklete a <strong>lehető legközelebb</strong> legyen a lelet indulási (ideális) hőmérsékletéhez!
+        </p>
+        
+        <button class="btn" onclick="startGame(90)">Könnyű (1,5 perc)</button>
+        <button class="btn" onclick="startGame(60)">Közepes (1 perc)</button>
+        <button class="btn" onclick="startGame(30)">Nehéz (30 mp)</button>
+    </div>
+
+    <div id="game">
+        <div class="info-panel">
+            <div>
+                <strong>Küldetés:</strong> <span id="info-desc" style="color:var(--primary); font-style:italic; font-size: 16px;"></span><br><br>
+                Indulás: <span id="info-start" style="color:#f44336; font-size: 18px; font-weight: bold;"></span> 
+                (<span id="info-ideal"></span>)<br>
+                Cél: <span id="info-dest" style="color:#2196F3; font-size: 18px; font-weight: bold;"></span>
+            </div>
+            <div style="text-align: right;">
+                <div class="timer">Hátralévő idő: <span id="time-left"></span> mp</div>
+                <div style="font-size: 18px; margin-top: 5px;">Hőmérséklet-változás büntetőpont: <strong id="score" style="color:yellow; font-size: 24px;">0</strong></div>
+            </div>
+        </div>
+        
+        <div id="map-container">
+            <svg id="lines"></svg>
+            <div id="cities"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" style="padding: 10px 20px; font-size: 14px; background: #555;" onclick="resetRoute()">Útvonal újratervezése</button>
+            <div class="route-log">Aktuális útvonal: <span id="route-text" style="color: white; font-weight: bold;"></span></div>
+        </div>
+    </div>
+
+    <div id="result">
+        <h2 id="result-title"></h2>
+        <p id="result-desc" style="font-size: 20px; line-height: 1.6;"></p>
+        <button class="btn" onclick="showMenu()">Új Játék</button>
+    </div>
+</div>
+
+<script>
+    const citiesData = {
+        "Anchorage": { temp: -2, x: 8, y: 15, edges: ["Vancouver", "Yakutsk"] },
+        "Vancouver": { temp: 10, x: 13, y: 25, edges: ["Anchorage", "Los Angeles", "New York"] },
+        "Los Angeles": { temp: 20, x: 14, y: 36, edges: ["Vancouver", "Mexico City", "Honolulu"] },
+        "Mexico City": { temp: 18, x: 19, y: 46, edges: ["Los Angeles", "New York", "Bogota"] },
+        "New York": { temp: 15, x: 28, y: 31, edges: ["Vancouver", "Mexico City", "Miami", "London", "Reykjavik"] },
+        "Miami": { temp: 25, x: 26, y: 41, edges: ["New York", "Bogota"] },
+        "Bogota": { temp: 14, x: 27, y: 53, edges: ["Mexico City", "Miami", "Lima", "Manaus"] },
+        "Manaus": { temp: 27, x: 31, y: 56, edges: ["Bogota", "Rio de Janeiro"] },
+        "Lima": { temp: 18, x: 26, y: 64, edges: ["Bogota", "Cusco", "Punta Arenas"] },
+        "Cusco": { temp: 10, x: 28, y: 65, edges: ["Lima", "Rio de Janeiro"] },
+        "Rio de Janeiro": { temp: 26, x: 35, y: 68, edges: ["Manaus", "Cusco", "Buenos Aires", "Dakar"] },
+        "Buenos Aires": { temp: 18, x: 32, y: 78, edges: ["Rio de Janeiro", "Punta Arenas", "Cape Town"] },
+        "Punta Arenas": { temp: 6, x: 28, y: 88, edges: ["Lima", "Buenos Aires"] },
+        "Reykjavik": { temp: 5, x: 42, y: 15, edges: ["New York", "London"] },
+        "London": { temp: 12, x: 46, y: 22, edges: ["New York", "Reykjavik", "Paris", "Berlin"] },
+        "Paris": { temp: 14, x: 48, y: 27, edges: ["London", "Madrid", "Rome", "Berlin"] },
+        "Madrid": { temp: 18, x: 45, y: 33, edges: ["Paris", "Rome", "Casablanca"] },
+        "Rome": { temp: 20, x: 51, y: 32, edges: ["Paris", "Madrid", "Berlin", "Athens"] },
+        "Berlin": { temp: 11, x: 51, y: 23, edges: ["London", "Paris", "Rome", "Budapest", "Moscow"] },
+        "Budapest": { temp: 13, x: 54, y: 27, edges: ["Berlin", "Rome", "Athens", "Istanbul"] },
+        "Athens": { temp: 22, x: 55, y: 36, edges: ["Rome", "Budapest", "Istanbul", "Cairo"] },
+        "Moscow": { temp: 6, x: 61, y: 20, edges: ["Berlin", "Istanbul", "Tashkent", "Yakutsk"] },
+        "Casablanca": { temp: 20, x: 45, y: 38, edges: ["Madrid", "Dakar", "Cairo"] },
+        "Dakar": { temp: 26, x: 42, y: 48, edges: ["Casablanca", "Rio de Janeiro", "Lagos"] },
+        "Lagos": { temp: 28, x: 49, y: 54, edges: ["Dakar", "Cairo", "Nairobi"] },
+        "Cairo": { temp: 25, x: 55, y: 40, edges: ["Athens", "Casablanca", "Lagos", "Jerusalem", "Nairobi"] },
+        "Nairobi": { temp: 20, x: 58, y: 58, edges: ["Cairo", "Lagos", "Cape Town", "Antananarivo", "Dubai"] },
+        "Antananarivo": { temp: 20, x: 63, y: 68, edges: ["Nairobi", "Cape Town", "Perth"] },
+        "Cape Town": { temp: 17, x: 53, y: 78, edges: ["Nairobi", "Antananarivo", "Buenos Aires"] },
+        "Istanbul": { temp: 18, x: 58, y: 33, edges: ["Athens", "Budapest", "Moscow", "Jerusalem", "Tehran"] },
+        "Jerusalem": { temp: 22, x: 57, y: 39, edges: ["Cairo", "Istanbul", "Dubai"] },
+        "Dubai": { temp: 32, x: 62, y: 44, edges: ["Jerusalem", "Nairobi", "Tehran", "Mumbai"] },
+        "Tehran": { temp: 21, x: 61, y: 35, edges: ["Istanbul", "Dubai", "Tashkent", "New Delhi"] },
+        "Tashkent": { temp: 16, x: 65, y: 30, edges: ["Moscow", "Tehran", "Ulaanbaatar", "Lhasa"] },
+        "Yakutsk": { temp: -10, x: 75, y: 15, edges: ["Moscow", "Anchorage", "Ulaanbaatar"] },
+        "Ulaanbaatar": { temp: -2, x: 72, y: 26, edges: ["Tashkent", "Yakutsk", "Beijing"] },
+        "Lhasa": { temp: 8, x: 70, y: 36, edges: ["Tashkent", "New Delhi", "Beijing", "Bangkok"] },
+        "New Delhi": { temp: 26, x: 70, y: 42, edges: ["Tehran", "Lhasa", "Mumbai", "Bangkok"] },
+        "Mumbai": { temp: 29, x: 68, y: 48, edges: ["Dubai", "New Delhi", "Bangkok"] },
+        "Bangkok": { temp: 30, x: 75, y: 51, edges: ["Lhasa", "New Delhi", "Mumbai", "Jakarta", "Manila"] },
+        "Beijing": { temp: 14, x: 78, y: 32, edges: ["Ulaanbaatar", "Lhasa", "Tokyo", "Manila"] },
+        "Tokyo": { temp: 16, x: 85, y: 34, edges: ["Beijing", "Manila", "Sydney"] },
+        "Manila": { temp: 29, x: 83, y: 51, edges: ["Bangkok", "Beijing", "Tokyo", "Jakarta"] },
+        "Jakarta": { temp: 28, x: 79, y: 63, edges: ["Bangkok", "Manila", "Perth", "Sydney"] },
+        "Perth": { temp: 24, x: 80, y: 76, edges: ["Antananarivo", "Jakarta", "Sydney"] },
+        "Sydney": { temp: 20, x: 87, y: 78, edges: ["Jakarta", "Perth", "Tokyo", "Auckland"] },
+        "Auckland": { temp: 16, x: 92, y: 84, edges: ["Sydney", "Honolulu"] },
+        "Honolulu": { temp: 24, x: 5, y: 45, edges: ["Auckland", "Los Angeles"] }
+    };
+
+    for (const city in citiesData) {
+        citiesData[city].edges.forEach(neighbor => {
+            if (citiesData[neighbor] && !citiesData[neighbor].edges.includes(city)) {
+                citiesData[neighbor].edges.push(city);
+            }
+        });
+    }
+
+    const missions = [
+        { start: "Cusco", dest: "London", desc: "Inka aranykincsek szállítása a British Múzeumba." },
+        { start: "Cairo", dest: "New York", desc: "Egyiptomi szarkofág szállítása a MET Múzeumba." },
+        { start: "Athens", dest: "Berlin", desc: "Ókori görög márványszobrok szállítása." },
+        { start: "Mexico City", dest: "Madrid", desc: "Azték leletek utaztatása Spanyolországba." },
+        { start: "Beijing", dest: "Budapest", desc: "Agyaghadsereg egy darabja érkezik a Szépművészetibe!" },
+        { start: "Rome", dest: "Rio de Janeiro", desc: "Római kori mozaikok egy dél-amerikai bemutatóra." },
+        { start: "Yakutsk", dest: "Manaus", desc: "Extrém szállítás! Fagyott mamutagyarat kérnek az Amazonas kutatóihoz." },
+        { start: "Auckland", dest: "Reykjavik", desc: "Maori fafaragások utaznak egy izlandi múzeumba." }
+    ];
+
+    let timer;
+    let timeLeft;
+    let score = 0;
+    let currentCity = "";
+    let mission = {};
+    let route = [];
+
+    function renderMap() {
+        const svg = document.getElementById('lines');
+        const citiesDiv = document.getElementById('cities');
+        svg.innerHTML = '';
+        citiesDiv.innerHTML = '';
+
+        const drawn = new Set();
+        for (const [name, data] of Object.entries(citiesData)) {
+            data.edges.forEach(targetName => {
+                if(!citiesData[targetName]) return;
+                const pair = [name, targetName].sort().join('-');
+                if (!drawn.has(pair)) {
+                    drawn.add(pair);
+                    const target = citiesData[targetName];
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', `${data.x}%`);
+                    line.setAttribute('y1', `${data.y}%`);
+                    line.setAttribute('x2', `${target.x}%`);
+                    line.setAttribute('y2', `${target.y}%`);
+                    line.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)');
+                    line.setAttribute('stroke-width', '2');
+                    svg.appendChild(line);
+                }
+            });
+
+            const cityEl = document.createElement('div');
+            cityEl.className = 'city';
+            cityEl.id = `city-${name.replace(/\s+/g, '-')}`;
+            cityEl.style.left = `${data.x}%`;
+            cityEl.style.top = `${data.y}%`;
+            cityEl.onclick = () => handleCityClick(name);
+            cityEl.innerHTML = `<div class="city-name">${name}</div><div class="city-temp">${data.temp}°</div>`;
+            citiesDiv.appendChild(cityEl);
+        }
+    }
+
+    function getCityId(name) {
+        return `city-${name.replace(/\s+/g, '-')}`;
+    }
+
+    function startGame(time) {
+        timeLeft = time;
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
+
+        mission = missions[Math.floor(Math.random() * missions.length)];
+        
+        renderMap();
+        initRoute();
+
+        document.getElementById('info-desc').innerText = mission.desc;
+        document.getElementById('info-start').innerText = mission.start;
+        document.getElementById('info-ideal').innerText = `${citiesData[mission.start].temp}°C ideális`;
+        document.getElementById('info-dest').innerText = mission.dest;
+
+        updateUI();
+        
+        clearInterval(timer);
+        timer = setInterval(() => {
+            timeLeft--;
+            updateUI();
+            if (timeLeft <= 0) {
+                endGame(false);
+            }
+        }, 1000);
+    }
+
+    function initRoute() {
+        score = 0;
+        route = [mission.start];
+        currentCity = mission.start;
+        updateMapVisuals();
+    }
+
+    function resetRoute() {
+        initRoute();
+        updateUI();
+    }
+
+    function handleCityClick(cityName) {
+        if (citiesData[currentCity].edges.includes(cityName)) {
+            const idealTemp = citiesData[mission.start].temp;
+            const targetTemp = citiesData[cityName].temp;
+            
+            const diff = Math.abs(idealTemp - targetTemp);
+            score += diff;
+            
+            route.push(cityName);
+            currentCity = cityName;
+            
+            updateUI();
+            updateMapVisuals();
+
+            if (currentCity === mission.dest) {
+                endGame(true);
+            }
+        }
+    }
+
+    function updateMapVisuals() {
+        document.querySelectorAll('.city').forEach(el => {
+            el.classList.remove('start', 'dest', 'active', 'disabled');
+            const elId = el.id;
+            const cityName = Object.keys(citiesData).find(key => getCityId(key) === elId);
+            
+            if (!citiesData[currentCity].edges.includes(cityName) && cityName !== currentCity) {
+                el.classList.add('disabled');
+            }
+        });
+
+        document.getElementById(getCityId(mission.start)).classList.add('start');
+        document.getElementById(getCityId(mission.dest)).classList.add('dest');
+        document.getElementById(getCityId(currentCity)).classList.add('active');
+    }
+
+    function updateUI() {
+        document.getElementById('time-left').innerText = timeLeft;
+        document.getElementById('score').innerText = score;
+        document.getElementById('route-text').innerText = route.join(" ➔ ");
+    }
+
+    function endGame(win) {
+        clearInterval(timer);
+        document.getElementById('game').style.display = 'none';
+        document.getElementById('result').style.display = 'block';
+
+        const title = document.getElementById('result-title');
+        const desc = document.getElementById('result-desc');
+
+        if (win) {
+            title.innerText = "Sikerült!";
+            title.style.color = "#4CAF50";
+            desc.innerHTML = `<strong>${mission.desc}</strong><br><br>
+                              Eljuttattad a leletet a célba!<br>
+                              A teljes hőmérséklet-ingadozás (büntetőpont): <strong>${score} pont</strong>.`;
+        } else {
+            title.innerText = "Sajnos elfogyott az időd!";
+            title.style.color = "#f44336";
+            desc.innerHTML = "A lelet nem jutott el a restaurálási helyre időben. A szállítás meghiúsult!";
+        }
+    }
+
+    function showMenu() {
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('menu').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
