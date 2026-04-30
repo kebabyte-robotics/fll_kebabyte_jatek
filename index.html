@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FLL Régészeti Szállítás - Globális</title>
+    <title>Seuso projekt game</title>
     <style>
         :root {
             --primary: #FF9800;
@@ -126,33 +126,33 @@
 <body>
 
 <div class="container">
-    <h1>FLL Régészeti Szállítás</h1>
-    <div class="subtitle">Óvd meg a leleteket a globális szállítás során!</div>
+    <h1>Seuso projekt game</h1>
+    <div class="subtitle">Protect the artifacts during global transportation!</div>
 
     <div id="menu">
         <h2>Válassz nehézségi fokot!</h2>
         <p style="max-width: 600px; margin: 0 auto 30px auto; line-height: 1.6;">
-            A feladatod: Eljuttatni a felbecsülhetetlen értékű régészeti leletet a célállomásra! <br>
-            A lelet nagyon érzékeny a hőmérséklet-változásra. Tervezd meg úgy az útvonalat a világtérképen, 
-            hogy az érintett városok hőmérséklete a <strong>lehető legközelebb</strong> legyen a lelet indulási (ideális) hőmérsékletéhez!
+            Your task: Deliver the invaluable archaeological artifact to its destination! <br>
+            The artifact is highly sensitive to temperature changes. Plan the route on the world map,
+            so that the temperatures of the affected cities remain within the <strong>as close as possible</strong> remain as close as possible to the artifact’s starting (ideal) temperature!
         </p>
         
-        <button class="btn" onclick="startGame(90)">Könnyű (1,5 perc)</button>
-        <button class="btn" onclick="startGame(60)">Közepes (1 perc)</button>
-        <button class="btn" onclick="startGame(30)">Nehéz (30 mp)</button>
+        <button class="btn" onclick="startGame(90)">Easy (1,5 perc)</button>
+        <button class="btn" onclick="startGame(60)">Medium (1 perc)</button>
+        <button class="btn" onclick="startGame(30)">Hard (30 mp)</button>
     </div>
 
     <div id="game">
         <div class="info-panel">
             <div>
-                <strong>Küldetés:</strong> <span id="info-desc" style="color:var(--primary); font-style:italic; font-size: 16px;"></span><br><br>
-                Indulás: <span id="info-start" style="color:#f44336; font-size: 18px; font-weight: bold;"></span> 
+                <strong>mission:</strong> <span id="info-desc" style="color:var(--primary); font-style:italic; font-size: 16px;"></span><br><br>
+                Start: <span id="info-start" style="color:#f44336; font-size: 18px; font-weight: bold;"></span> 
                 (<span id="info-ideal"></span>)<br>
-                Cél: <span id="info-dest" style="color:#2196F3; font-size: 18px; font-weight: bold;"></span>
+                goal: <span id="info-dest" style="color:#2196F3; font-size: 18px; font-weight: bold;"></span>
             </div>
             <div style="text-align: right;">
-                <div class="timer">Hátralévő idő: <span id="time-left"></span> mp</div>
-                <div style="font-size: 18px; margin-top: 5px;">Hőmérséklet-változás büntetőpont: <strong id="score" style="color:yellow; font-size: 24px;">0</strong></div>
+                <div class="timer">Remaining time: <span id="time-left"></span> mp</div>
+                <div style="font-size: 18px; margin-top: 5px;">Penalty points for temperature change: <strong id="score" style="color:yellow; font-size: 24px;">0</strong></div>
             </div>
         </div>
         
@@ -162,15 +162,15 @@
         </div>
 
         <div class="controls">
-            <button class="btn" style="padding: 10px 20px; font-size: 14px; background: #555;" onclick="resetRoute()">Útvonal újratervezése</button>
-            <div class="route-log">Aktuális útvonal: <span id="route-text" style="color: white; font-weight: bold;"></span></div>
+            <button class="btn" style="padding: 10px 20px; font-size: 14px; background: #555;" onclick="resetRoute()">Route recalculation</button>
+            <div class="route-log">Current route: <span id="route-text" style="color: white; font-weight: bold;"></span></div>
         </div>
     </div>
 
     <div id="result">
         <h2 id="result-title"></h2>
         <p id="result-desc" style="font-size: 20px; line-height: 1.6;"></p>
-        <button class="btn" onclick="showMenu()">Új Játék</button>
+        <button class="btn" onclick="showMenu()">New game</button>
     </div>
 </div>
 
@@ -235,14 +235,14 @@
     }
 
     const missions = [
-        { start: "Cusco", dest: "London", desc: "Inka aranykincsek szállítása a British Múzeumba." },
-        { start: "Cairo", dest: "New York", desc: "Egyiptomi szarkofág szállítása a MET Múzeumba." },
-        { start: "Athens", dest: "Berlin", desc: "Ókori görög márványszobrok szállítása." },
-        { start: "Mexico City", dest: "Madrid", desc: "Azték leletek utaztatása Spanyolországba." },
-        { start: "Beijing", dest: "Budapest", desc: "Agyaghadsereg egy darabja érkezik a Szépművészetibe!" },
-        { start: "Rome", dest: "Rio de Janeiro", desc: "Római kori mozaikok egy dél-amerikai bemutatóra." },
-        { start: "Yakutsk", dest: "Manaus", desc: "Extrém szállítás! Fagyott mamutagyarat kérnek az Amazonas kutatóihoz." },
-        { start: "Auckland", dest: "Reykjavik", desc: "Maori fafaragások utaznak egy izlandi múzeumba." }
+        { start: "Cusco", dest: "London", desc: "Transport of Inca gold treasures to the British Museum" },
+        { start: "Cairo", dest: "New York", desc: "Transport of an Egyptian sarcophagus to the Met Museum." },
+        { start: "Athens", dest: "Berlin", desc: "Transport of ancient Greek marble statues." },
+        { start: "Mexico City", dest: "Madrid", desc: "Transport of Aztec artifacts to Spain." },
+        { start: "Beijing", dest: "Budapest", desc: "A piece of the Terracotta Army is arriving at the Museum of Fine Arts!" },
+        { start: "Rome", dest: "Rio de Janeiro", desc: "Roman-era mosaics for a South American exhibition." },
+        { start: "Yakutsk", dest: "Manaus", desc: "Extreme transport! A frozen mammoth tusk is requested for researchers in the Amazon." },
+        { start: "Auckland", dest: "Reykjavik", desc: "Maori wood carvings are traveling to a museum in Iceland." }
     ];
 
     let timer;
@@ -386,12 +386,12 @@
             title.innerText = "Sikerült!";
             title.style.color = "#4CAF50";
             desc.innerHTML = `<strong>${mission.desc}</strong><br><br>
-                              Eljuttattad a leletet a célba!<br>
-                              A teljes hőmérséklet-ingadozás (büntetőpont): <strong>${score} pont</strong>.`;
+                              You delivered the artifact to its destination!<br>
+                              Total temperature fluctuation (penalty points): <strong>${score} point</strong>.`;
         } else {
-            title.innerText = "Sajnos elfogyott az időd!";
+            title.innerText = "Unfortunately, you’ve run out of time!";
             title.style.color = "#f44336";
-            desc.innerHTML = "A lelet nem jutott el a restaurálási helyre időben. A szállítás meghiúsult!";
+            desc.innerHTML = "The artifact did not arrive at the restoration site in time. The transport failed!";
         }
     }
 
